@@ -3,9 +3,19 @@
 # Define the path to the known_hosts file
 KNOWN_HOSTS_FILE="${HOME}/.ssh/known_hosts"
 
+# Define the keys of the remote host to retrieve
+# no spaces between comma delimited, e.g., "rsa,dsa,ed25519"
+# default is just ed25519 because it's way more efficient.
+ALGO="ed25519"
+
 # Function to get the IP address from the user
 get_ip_address() {
-    read -p "Enter the IP address of the server: " ip_address
+    if [[ -n "$1" ]]; then
+        ip_address=$1
+        echo "Using IP address from command line: $ip_address"
+    else
+        read -p "Enter the IP address of the server: " ip_address
+    fi 
     if ! validate_ip_format "$ip_address"; then
         echo "Invalid IP address format."
         exit 1
@@ -64,7 +74,7 @@ check_ip_reachability() {
 add_ssh_key() {
     local ip=$1
     local ssh_key_output
-    ssh_key_output=$(ssh-keyscan -H -t ed25519 "$ip" 2>&1 | grep -v '^#')
+    ssh_key_output=$(ssh-keyscan -H -t "$ALGO" "$ip" 2>&1 | grep -v '^#')
 
     if [[ -z "$ssh_key_output" ]]; then
         echo "Failed to get SSH key from $ip."
@@ -76,7 +86,7 @@ add_ssh_key() {
 }
 
 # Main script execution
-get_ip_address
+get_ip_address "$1"
 add_ssh_key "$ip_address"
 echo "SSH key added successfully for $ip_address."
 
